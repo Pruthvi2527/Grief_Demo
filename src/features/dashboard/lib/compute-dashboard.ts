@@ -1,7 +1,7 @@
 import type {
   ExerciseProgressStatus,
-  ExerciseSummary,
   SectionSummary,
+  SlotSummary,
 } from "../types";
 
 type SectionRow = {
@@ -72,51 +72,54 @@ export function buildDashboardViewModel(
       (a, b) => a.order_index - b.order_index,
     );
 
-    const exerciseSummaries: ExerciseSummary[] = sectionExercises.map(
-      (exercise) => {
-        const status = progressMap.get(exercise.id) ?? "not_started";
-        return {
-          id: exercise.id,
-          sectionId: exercise.section_id,
-          title: exercise.title,
-          description: exercise.description,
-          durationMin: exercise.duration_min,
-          orderIndex: exercise.order_index,
-          status,
-        };
-      },
-    );
+    const slotSummaries: SlotSummary[] = sectionExercises.map((exercise, index) => {
+      const status = progressMap.get(exercise.id) ?? "not_started";
 
-    const exerciseCount = exerciseSummaries.length;
-    const sectionCompletedCount = exerciseSummaries.filter(
-      (exercise) => exercise.status === "completed",
+      return {
+        id: `legacy-slot-${exercise.id}`,
+        sectionId: exercise.section_id,
+        slotNumber: index + 1,
+        title: exercise.title,
+        assignmentType: "fixed" as const,
+        assignedExerciseId: exercise.id,
+        assignedExerciseTitle: exercise.title,
+        durationMin: exercise.duration_min,
+        orderIndex: exercise.order_index,
+        status,
+      };
+    });
+
+    const slotCount = slotSummaries.length;
+    const sectionCompletedCount = slotSummaries.filter(
+      (slot) => slot.status === "completed",
     ).length;
 
-    totalExercises += exerciseCount;
+    totalExercises += slotCount;
     completedExercises += sectionCompletedCount;
 
     const isLocked = !previousSectionComplete;
-    const hasIncomplete = sectionCompletedCount < exerciseCount;
+    const hasIncomplete = sectionCompletedCount < slotCount;
     const isCurrent =
-      !isLocked && !currentSectionAssigned && (hasIncomplete || exerciseCount === 0);
+      !isLocked && !currentSectionAssigned && (hasIncomplete || slotCount === 0);
 
     if (isCurrent) {
       currentSectionAssigned = true;
     }
 
     previousSectionComplete =
-      exerciseCount > 0 && sectionCompletedCount === exerciseCount;
+      slotCount > 0 && sectionCompletedCount === slotCount;
 
     return {
       id: section.id,
       title: section.title,
       description: section.description,
       orderIndex: section.order_index,
-      exerciseCount,
+      slotCount,
+      exerciseCount: slotCount,
       completedCount: sectionCompletedCount,
       isLocked,
       isCurrent,
-      exercises: exerciseSummaries,
+      slots: slotSummaries,
     };
   });
 
@@ -125,38 +128,42 @@ export function buildDashboardViewModel(
     sectionSummaries.find((section) => !section.isLocked) ??
     null;
 
-  const orderedExercises = sectionSummaries.flatMap((section) =>
-    section.exercises.map((exercise) => ({
-      ...exercise,
+  const orderedSlots = sectionSummaries.flatMap((section) =>
+    section.slots.map((slot) => ({
+      ...slot,
       sectionTitle: section.title,
     })),
   );
 
-  const inProgressExercise = orderedExercises.find(
-    (exercise) => exercise.status === "in_progress",
+  const inProgressSlot = orderedSlots.find(
+    (slot) => slot.status === "in_progress" && slot.assignedExerciseId,
   );
 
-  const nextIncompleteExercise =
-    inProgressExercise ??
+  const nextIncompleteSlot =
+    inProgressSlot ??
     (currentSection
-      ? currentSection.exercises
-          .map((exercise) => ({
-            ...exercise,
-            sectionTitle: currentSection.title,
-          }))
-          .find((exercise) => exercise.status !== "completed")
-      : orderedExercises.find((exercise) => exercise.status !== "completed"));
+      ? currentSection.slots.find(
+          (slot) => slot.status !== "completed" && slot.assignedExerciseId,
+        )
+      : orderedSlots.find(
+          (slot) => slot.status !== "completed" && slot.assignedExerciseId,
+        ));
 
-  const continueJourney = nextIncompleteExercise
-    ? {
-        exerciseId: nextIncompleteExercise.id,
-        exerciseTitle: nextIncompleteExercise.title,
-        sectionId: nextIncompleteExercise.sectionId,
-        sectionTitle: nextIncompleteExercise.sectionTitle,
-        durationMin: nextIncompleteExercise.durationMin,
-        status: nextIncompleteExercise.status,
-      }
-    : null;
+  const continueJourney =
+    nextIncompleteSlot?.assignedExerciseId &&
+    nextIncompleteSlot.assignedExerciseTitle
+      ? {
+          exerciseId: nextIncompleteSlot.assignedExerciseId,
+          exerciseTitle: nextIncompleteSlot.assignedExerciseTitle,
+          sectionId: nextIncompleteSlot.sectionId,
+          sectionTitle:
+            sectionSummaries.find(
+              (section) => section.id === nextIncompleteSlot.sectionId,
+            )?.title ?? "",
+          durationMin: nextIncompleteSlot.durationMin,
+          status: nextIncompleteSlot.status,
+        }
+      : null;
 
   const overallProgressPercent =
     totalExercises === 0

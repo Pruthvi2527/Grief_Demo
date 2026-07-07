@@ -2,23 +2,18 @@
 
 import { useState } from "react";
 
-import { getDefaultExpandedSectionIds } from "../lib/exercise-display";
+import { getDefaultExpandedSectionIds } from "../lib/slot-display";
 import type { SectionSummary } from "../types";
 import { CourseSectionAccordion } from "./CourseSectionAccordion";
 
 type CourseSectionsAccordionProps = {
   sections: SectionSummary[];
   currentExerciseId: string | null;
-  /**
-   * Week 2+: AI-recommended exercise id. Highlights a row without changing layout.
-   */
-  recommendedExerciseId?: string | null;
 };
 
 export function CourseSectionsAccordion({
   sections,
   currentExerciseId,
-  recommendedExerciseId = null,
 }: CourseSectionsAccordionProps) {
   const [expandedSectionIds, setExpandedSectionIds] = useState<Set<string>>(
     () => new Set(getDefaultExpandedSectionIds(sections)),
@@ -61,7 +56,6 @@ export function CourseSectionsAccordion({
             isExpanded={expandedSectionIds.has(section.id)}
             onToggle={() => toggleSection(section.id)}
             currentExerciseId={currentExerciseId}
-            recommendedExerciseId={recommendedExerciseId}
           />
         ))}
       </ol>

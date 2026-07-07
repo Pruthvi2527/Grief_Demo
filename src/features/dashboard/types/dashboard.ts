@@ -1,5 +1,19 @@
 export type ExerciseProgressStatus = "not_started" | "in_progress" | "completed";
 
+export type SlotSummary = {
+  id: string;
+  sectionId: string;
+  slotNumber: number;
+  title: string;
+  assignmentType: "fixed" | "rule_based" | "ai_selected";
+  assignedExerciseId: string | null;
+  assignedExerciseTitle: string | null;
+  durationMin: number | null;
+  orderIndex: number;
+  status: ExerciseProgressStatus;
+};
+
+/** @deprecated Use SlotSummary — retained for legacy adapters */
 export type ExerciseSummary = {
   id: string;
   sectionId: string;
@@ -15,11 +29,12 @@ export type SectionSummary = {
   title: string;
   description: string | null;
   orderIndex: number;
+  slotCount: number;
   exerciseCount: number;
   completedCount: number;
   isLocked: boolean;
   isCurrent: boolean;
-  exercises: ExerciseSummary[];
+  slots: SlotSummary[];
 };
 
 export type ContinueJourney = {

@@ -1,0 +1,4 @@
+/**
+ * Diagnostic domain types.
+ */
+export {};
