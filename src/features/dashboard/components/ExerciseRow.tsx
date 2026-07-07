@@ -4,24 +4,22 @@ import {
   Circle,
   Lock,
   Play,
+  Sparkles,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { SlotDisplayStatus } from "../lib/slot-display";
-import type { SlotSummary } from "../types";
-
-export type EnrichedExercise = SlotSummary & {
-  displayStatus: SlotDisplayStatus;
-  isNavigable: boolean;
-  href: string | null;
-};
+import type { EnrichedExercise } from "../lib/exercise-display";
 
 type ExerciseRowProps = {
   exercise: EnrichedExercise;
 };
 
-function ExerciseStatusIcon({ displayStatus }: { displayStatus: SlotDisplayStatus }) {
+function ExerciseStatusIcon({
+  displayStatus,
+}: {
+  displayStatus: EnrichedExercise["displayStatus"];
+}) {
   switch (displayStatus) {
     case "completed":
       return (
@@ -56,9 +54,51 @@ function formatDuration(durationMin: number | null): string | null {
   return `${durationMin} min`;
 }
 
-/** @deprecated Use CourseSlot instead */
-export function ExerciseRow({ exercise }: ExerciseRowProps) {
+function ExerciseRowContent({ exercise }: ExerciseRowProps) {
   const durationLabel = formatDuration(exercise.durationMin);
+  const isCurrent = exercise.displayStatus === "current";
+
+  return (
+    <>
+      <ExerciseStatusIcon displayStatus={exercise.displayStatus} />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p
+            className={cn(
+              "font-medium",
+              isCurrent
+                ? "text-onboarding-primary"
+                : exercise.displayStatus === "locked"
+                  ? "text-onboarding-muted"
+                  : "text-onboarding-foreground",
+            )}
+          >
+            {exercise.title}
+          </p>
+          {exercise.isRecommended ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-onboarding-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-onboarding-primary">
+              <Sparkles className="size-3" aria-hidden="true" />
+              Recommended
+            </span>
+          ) : null}
+        </div>
+        {durationLabel ? (
+          <p className="mt-0.5 text-sm text-onboarding-muted">{durationLabel}</p>
+        ) : null}
+      </div>
+
+      <span className="sr-only">
+        {exercise.displayStatus === "completed" && "Completed"}
+        {exercise.displayStatus === "current" && "Current exercise"}
+        {exercise.displayStatus === "not_started" && "Not started"}
+        {exercise.displayStatus === "locked" && "Locked"}
+      </span>
+    </>
+  );
+}
+
+export function ExerciseRow({ exercise }: ExerciseRowProps) {
   const isCurrent = exercise.displayStatus === "current";
   const rowClassName = cn(
     "flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors",
@@ -69,40 +109,17 @@ export function ExerciseRow({ exercise }: ExerciseRowProps) {
         : "border-onboarding-border/70 bg-white/70 hover:border-onboarding-border hover:bg-white",
   );
 
-  const content = (
-    <>
-      <ExerciseStatusIcon displayStatus={exercise.displayStatus} />
-      <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "font-medium",
-            isCurrent
-              ? "text-onboarding-primary"
-              : exercise.displayStatus === "locked"
-                ? "text-onboarding-muted"
-                : "text-onboarding-foreground",
-          )}
-        >
-          {exercise.assignedExerciseTitle ?? exercise.title}
-        </p>
-        {durationLabel ? (
-          <p className="mt-0.5 text-sm text-onboarding-muted">{durationLabel}</p>
-        ) : null}
-      </div>
-    </>
-  );
-
   if (exercise.isNavigable && exercise.href) {
     return (
       <Link href={exercise.href} className={cn(rowClassName, "group")}>
-        {content}
+        <ExerciseRowContent exercise={exercise} />
       </Link>
     );
   }
 
   return (
     <div className={rowClassName} aria-disabled="true">
-      {content}
+      <ExerciseRowContent exercise={exercise} />
     </div>
   );
 }

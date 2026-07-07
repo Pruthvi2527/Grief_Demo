@@ -1,4 +1,0 @@
-/**
- * Recommendation domain types.
- */
-export {};
