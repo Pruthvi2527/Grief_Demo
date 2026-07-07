@@ -4,4 +4,5 @@ export type {
   ExerciseProgressStatus,
   ExerciseSummary,
   SectionSummary,
+  SlotSummary,
 } from "./dashboard";

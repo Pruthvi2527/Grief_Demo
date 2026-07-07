@@ -1,3 +1,5 @@
+import type { SlotAssignmentType } from "@/types/database.course";
+
 import type {
   ExerciseProgressStatus,
   SectionSummary,
@@ -11,13 +13,24 @@ type SectionRow = {
   order_index: number;
 };
 
-type ExerciseRow = {
+type SlotRow = {
   id: string;
   section_id: string;
   title: string;
-  description: string | null;
   order_index: number;
+  assignment_type: SlotAssignmentType;
+  fixed_exercise_id: string | null;
+};
+
+type ExerciseLibraryRow = {
+  id: string;
+  title: string;
   duration_min: number | null;
+};
+
+type AssignmentRow = {
+  slot_id: string;
+  exercise_id: string;
 };
 
 type ProgressRow = {
@@ -25,9 +38,11 @@ type ProgressRow = {
   status: ExerciseProgressStatus;
 };
 
-export function buildDashboardViewModel(
+export function buildSlotDashboardViewModel(
   sections: SectionRow[],
-  exercises: ExerciseRow[],
+  slots: SlotRow[],
+  exercises: ExerciseLibraryRow[],
+  assignments: AssignmentRow[],
   progress: ProgressRow[],
 ): {
   sections: SectionSummary[];
@@ -45,18 +60,19 @@ export function buildDashboardViewModel(
   } | null;
 } {
   const progressMap = new Map(progress.map((item) => [item.exercise_id, item.status]));
-
-  const exercisesBySection = exercises.reduce<Record<string, ExerciseRow[]>>(
-    (acc, exercise) => {
-      if (!acc[exercise.section_id]) {
-        acc[exercise.section_id] = [];
-      }
-
-      acc[exercise.section_id].push(exercise);
-      return acc;
-    },
-    {},
+  const exerciseMap = new Map(exercises.map((item) => [item.id, item]));
+  const assignmentMap = new Map(
+    assignments.map((item) => [item.slot_id, item.exercise_id]),
   );
+
+  const slotsBySection = slots.reduce<Record<string, SlotRow[]>>((acc, slot) => {
+    if (!acc[slot.section_id]) {
+      acc[slot.section_id] = [];
+    }
+
+    acc[slot.section_id].push(slot);
+    return acc;
+  }, {});
 
   const sortedSections = [...sections].sort(
     (a, b) => a.order_index - b.order_index,
@@ -68,23 +84,30 @@ export function buildDashboardViewModel(
   let completedExercises = 0;
 
   const sectionSummaries: SectionSummary[] = sortedSections.map((section) => {
-    const sectionExercises = (exercisesBySection[section.id] ?? []).sort(
+    const sectionSlots = (slotsBySection[section.id] ?? []).sort(
       (a, b) => a.order_index - b.order_index,
     );
 
-    const slotSummaries: SlotSummary[] = sectionExercises.map((exercise, index) => {
-      const status = progressMap.get(exercise.id) ?? "not_started";
+    const slotSummaries: SlotSummary[] = sectionSlots.map((slot, index) => {
+      const assignedExerciseId =
+        assignmentMap.get(slot.id) ?? slot.fixed_exercise_id;
+      const assignedExercise = assignedExerciseId
+        ? exerciseMap.get(assignedExerciseId)
+        : null;
+      const status = assignedExerciseId
+        ? (progressMap.get(assignedExerciseId) ?? "not_started")
+        : "not_started";
 
       return {
-        id: `legacy-slot-${exercise.id}`,
-        sectionId: exercise.section_id,
+        id: slot.id,
+        sectionId: slot.section_id,
         slotNumber: index + 1,
-        title: exercise.title,
-        assignmentType: "fixed" as const,
-        assignedExerciseId: exercise.id,
-        assignedExerciseTitle: exercise.title,
-        durationMin: exercise.duration_min,
-        orderIndex: exercise.order_index,
+        title: slot.title,
+        assignmentType: slot.assignment_type,
+        assignedExerciseId: assignedExerciseId ?? null,
+        assignedExerciseTitle: assignedExercise?.title ?? null,
+        durationMin: assignedExercise?.duration_min ?? null,
+        orderIndex: slot.order_index,
         status,
       };
     });

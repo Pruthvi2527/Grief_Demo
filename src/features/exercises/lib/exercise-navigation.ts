@@ -9,12 +9,14 @@ export type FlatExercise = {
 
 export function buildFlatExerciseList(sections: SectionSummary[]): FlatExercise[] {
   return sections.flatMap((section) =>
-    section.exercises.map((exercise) => ({
-      id: exercise.id,
-      title: exercise.title,
-      sectionId: section.id,
-      sectionLocked: section.isLocked,
-    })),
+    section.slots
+      .filter((slot) => slot.assignedExerciseId)
+      .map((slot) => ({
+        id: slot.assignedExerciseId!,
+        title: slot.assignedExerciseTitle ?? slot.title,
+        sectionId: section.id,
+        sectionLocked: section.isLocked,
+      })),
   );
 }
 
