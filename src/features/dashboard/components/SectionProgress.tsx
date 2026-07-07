@@ -2,7 +2,7 @@ import { CheckCircle2, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { SectionBadgeVariant } from "../lib/slot-display";
+import type { SectionBadgeVariant } from "../lib/exercise-display";
 import type { SectionSummary } from "../types";
 
 type SectionProgressProps = {
@@ -15,7 +15,7 @@ export function SectionProgress({ section, className }: SectionProgressProps) {
     <p className={cn("text-sm text-onboarding-muted", className)}>
       {section.isLocked
         ? "Complete the previous section to unlock"
-        : `${section.completedCount} of ${section.slotCount} slots completed`}
+        : `${section.completedCount} of ${section.exerciseCount} exercises completed`}
     </p>
   );
 }

@@ -5,11 +5,11 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import {
-  enrichSectionSlots,
+  enrichSectionExercises,
   getSectionBadgeVariant,
-} from "../lib/slot-display";
+} from "../lib/exercise-display";
 import type { SectionSummary } from "../types";
-import { CourseSlotList } from "./CourseSlotList";
+import { ExerciseRow } from "./ExerciseRow";
 import { SectionCompletionBadge, SectionProgress } from "./SectionProgress";
 
 type CourseSectionAccordionProps = {
@@ -18,6 +18,7 @@ type CourseSectionAccordionProps = {
   isExpanded: boolean;
   onToggle: () => void;
   currentExerciseId: string | null;
+  recommendedExerciseId?: string | null;
 };
 
 export function CourseSectionAccordion({
@@ -26,12 +27,13 @@ export function CourseSectionAccordion({
   isExpanded,
   onToggle,
   currentExerciseId,
+  recommendedExerciseId,
 }: CourseSectionAccordionProps) {
   const badgeVariant = getSectionBadgeVariant(section);
-  const slots = enrichSectionSlots(
-    section.slots,
-    section.isLocked,
+  const exercises = enrichSectionExercises(
+    section,
     currentExerciseId,
+    recommendedExerciseId,
   );
   const panelId = `section-panel-${section.id}`;
   const triggerId = `section-trigger-${section.id}`;
@@ -101,9 +103,13 @@ export function CourseSectionAccordion({
           )}
         >
           <div className="overflow-hidden">
-            <div className="border-t border-onboarding-border/60 px-5 py-4">
-              <CourseSlotList slots={slots} />
-            </div>
+            <ul className="space-y-2 border-t border-onboarding-border/60 px-5 py-4">
+              {exercises.map((exercise) => (
+                <li key={exercise.id}>
+                  <ExerciseRow exercise={exercise} />
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </article>

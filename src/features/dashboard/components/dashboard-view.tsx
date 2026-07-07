@@ -55,6 +55,7 @@ export function DashboardView({ data }: DashboardViewProps) {
         <CourseSectionsAccordion
           sections={data.sections}
           currentExerciseId={data.continueJourney?.exerciseId ?? null}
+          recommendedExerciseId={data.recommendedExerciseId ?? null}
         />
       </div>
     </DashboardShell>
