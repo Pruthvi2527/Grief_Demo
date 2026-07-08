@@ -39,7 +39,7 @@ export function BackToDashboardLink({ exerciseId }: BackToDashboardLinkProps) {
       )}
     >
       <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />
-      Dashboard
+      TODashboard
     </Link>
   );
 }
